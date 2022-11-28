@@ -1,0 +1,22 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+    {{posts}}
+    {% for post in posts %}
+        <div class="div-post">
+            <div class="header-post">
+                <span><a href="{% url 'profile' post.creator.id %}">{{post.creator}}</a></span>
+                {% if post.updated_at %}
+                    <span>{{post.updated_at}}</span>
+                {% endif %}
+            </div>
+            <div class="content-post">
+                {{post.content}}
+            </div>
+            <div class="footer-post">
+                <span><button class="like-button" id="{{post.id}}">{{post.likes}}</button></span>
+                <span>{{post.created_at}}</span>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

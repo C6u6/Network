@@ -1,0 +1,50 @@
+.body {
+    display: grid;
+    place-items:center;
+}
+
+.div-post {
+    display: grid;
+    place-items: center;
+
+    padding: 10px;
+    margin: 25px 0 0 25px;
+
+    border: solid rgb(0, 0, 0) 1px;
+    border-radius: 15px;
+
+    width: 600px;
+    height: auto;
+}
+
+.header-post {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+
+    border-bottom: solid gray .1px;
+    width: 570px;
+}
+
+.content-post {
+    padding: 40px;
+}
+
+.footer-post {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 182px;
+}
+
+.edit-content-post {
+    border: none;
+    font-size: 15px;
+    background-color: inherit;
+    color: #007bff;
+}
+
+a:hover {
+    text-decoration: none;
+}

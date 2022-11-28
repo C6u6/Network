@@ -1,0 +1,32 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+    {% if not user_is_the_profile_owner %}
+        <button>Follow or ...</button>
+    {% endif %}
+
+    <h2>{{creator}}</h2>
+    <p>Followers: {{followers}}</p>
+    <p>Following: {{following}}</p>
+
+    {% for post in all_user_posts %}
+        <div class="div-post">
+            <div class="header-post">
+                <span><a href="{% url 'profile' post.creator.id %}">{{post.creator}}</a></span>
+                {% if request.user.id == post.creator.id %}
+                    <button class="edit-content-post" id="{{post.id}}">Edit</button>
+                {% endif %}
+                {% if post.updated_at %}
+                    <span>{{post.updated_at}}</span>
+                {% endif %}
+            </div>
+            <div class="content-post" id="content-post-id-{{post.id}}"></div>>
+                {{post.content}}
+            </div>
+            <div class="footer-post">
+                <span><button class="like-button" id="{{post.id}}">{{post.likes}}</button></span>
+                <span>{{post.created_at}}</span>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

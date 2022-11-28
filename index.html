@@ -1,0 +1,30 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+    <p>Superuser:
+        username:cauaadim
+        password:caua
+    </p>
+    {% for post in posts %}
+        <div class="div-post">
+            <div class="header-post">
+                <span>
+                    <span><a href="{% url 'profile' post.creator.id %}">The creator is: {{post.creator}}</a></span>
+                </span>
+                {% if request.user.id == post.creator.id %}
+                    <button class="edit-content-post" id="{{post.id}}">Edit</button>
+                {% endif %}
+                {% if post.updated_at %}
+                    <span>{{post.updated_at}}</span>
+                {% endif %}
+            </div>
+            <div class="content-post" id="content-post-id-{{post.id}}">
+                {{post.content}}
+            </div>
+            <div class="footer-post">
+                <span><button class="like-button" id="{{post.id}}">{{post.likes}}</button></span>
+                <span>{{post.created_at}}</span>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
