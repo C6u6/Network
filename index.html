@@ -5,7 +5,7 @@
         username:cauaadim
         password:caua
     </p>
-    {% for post in posts %}
+    {% for post in page_obj %}
         <div class="div-post">
             <div class="header-post">
                 <span>
@@ -15,7 +15,7 @@
                     <button class="edit-content-post" id="{{post.id}}">Edit</button>
                 {% endif %}
                 {% if post.updated_at %}
-                    <span>{{post.updated_at}}</span>
+                    <span id="updated_at" hidden>Edited: {{post.updated_at}}</span>
                 {% endif %}
             </div>
             <div class="content-post" id="content-post-id-{{post.id}}">
@@ -23,8 +23,25 @@
             </div>
             <div class="footer-post">
                 <span><button class="like-button" id="{{post.id}}">{{post.likes}}</button></span>
-                <span>{{post.created_at}}</span>
+                <span id="created_at">{{post.created_at}}</span>
             </div>
         </div>
     {% endfor %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+    
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
+    
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
 {% endblock %}

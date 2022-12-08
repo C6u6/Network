@@ -1,7 +1,7 @@
+'use strict';
+
 document.addEventListener('DOMContentLoaded', () => {
     // Add an event that will allow user to like or unlike a post
-    const userId = JSON.parse(document.getElementById('user_id').textContent);
-
     document.querySelectorAll('.like-button').forEach( element => {
         let postIdInButton = element.getAttribute('id');
         element.addEventListener('click', function () {likeOrUnlike(postIdInButton, element)});
@@ -11,34 +11,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.edit-content-post').forEach( button => {
         let postIdInButton = button.getAttribute('id');
         button.addEventListener('click', function () {editContent(postIdInButton)});
-    })
+    });
+
+    // Show the edited time post, if any
+    showEditedTime();
 });
 
 function likeOrUnlike(postId, button) {
-
-    // Check whether user likes or unlikes a post
-    fetch(`action_in_like_button/${postId}`)
-    .then(response => response.json())
-    .then(data => {
-        
-        // Make a PUT reuqest to update the number of likes in a post
-        fetch(`update_likes/${postId}`, {
-            method: "PUT",
-            body: JSON.stringify({
-                likes: data.likes,
-            })
-        })
-        .catch(error => console.log(error));
-
-        button.style.backgroundColor = 'gray';
-        if (data.action == 'liking') {
-            button.style.backgroundColor = 'blue';
-        }
+    // Make a PUT request to update the number of likes in a post
+    fetch(`update_likes/${postId}`, {
+        method: "POST",
+        body: JSON.stringify({
+            ilustrativeKey: '',
+        }) 
     })
+    .catch(error => console.log(error));
 }
 
-function editContent(postId) {
 
+function editContent(postId) {
 
     // Make a form to insert in place of the post content
     let form = document.createElement('form');
@@ -85,7 +76,6 @@ function editContent(postId) {
     submitButton.addEventListener('click', () => {
         if (!submitButton.disabled) {
             // Send through fetch
-            console.log(textarea.value);
             fetch(`/edit/${postId}`, {
                 'method': 'PUT',
                 body: JSON.stringify({
@@ -94,8 +84,20 @@ function editContent(postId) {
             })
             .catch(error => console.log(error));
 
-            // Close the form and reload the post content
-            document.querySelector('#content-post-id-{{post.id}}').innerHTML = textarea.value; 
+            // Substitute the form by the new post content
+            document.querySelector(`#content-post-id-${postId}`).innerHTML = textarea.value; 
+
+            // Show the time that the post was changed
+            showEditedTime();
         }
     })
+}
+
+function showEditedTime() {
+    let created_at = document.querySelector('#created_at');
+    let updated_at = document.querySelector('#updated_at');
+
+    if (created_at.innerHTML != updated_at.innerHTML) {
+        updated_at.hidden = false;
+    };
 }

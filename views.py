@@ -1,11 +1,12 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator
 
 from .models import User, Post, Following, Likes
 from .forms import postForm
@@ -16,8 +17,13 @@ import datetime
 
 def index(request):
     allposts = Post.objects.all().order_by('-created_at')
+    # Pagination
+    paginator = Paginator(allposts, 10) 
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     return render(request, "network/index.html", {
-        'posts': allposts
+        'page_obj': page_obj,
     })
 
 
@@ -89,6 +95,8 @@ def post(request):
             
             obj.save()
 
+            return redirect('index')
+
     return render(request, "network/post.html", {
         'postForm': postForm(),
     })
@@ -103,12 +111,18 @@ def profile(request, profile_id):
     followers = Following.objects.filter(following=profile_user_id).count()
     following = Following.objects.filter(follower=profile_user_id).count()
     all_user_posts = Post.objects.filter(creator=profile_user_id).order_by('-created_at')
+    paginator = Paginator(all_user_posts, 10)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    follow_or_unfollow = 'Unfollow' if Following.objects.filter(follower=User.objects.get(pk=request.user.id), following=profile_user_id) else 'Follow'
 
     return render(request, "network/profile.html", {
         'creator': User.objects.get(id=profile_user_id).username,
+        'page_obj': page_obj,
         'followers': followers,
         'following': following,
-        'all_user_posts': all_user_posts,
+        'follow_or_unfollow': follow_or_unfollow,
         'user_is_the_profile_owner': request.user.id == profile_id
     })
 
@@ -120,42 +134,36 @@ def content_following(request):
     all_users_beeing_followed_by_current_user = Following.objects.filter(follower=request.user.id).values()
     posts = []
     for followed_user in all_users_beeing_followed_by_current_user:
-        bunch_of_posts = Post.objects.filter(creator=followed_user['id']).order_by('-created_at')[:10]
+        bunch_of_posts = Post.objects.filter(creator=followed_user['following_id']).order_by('-created_at')[:10]
         for post in bunch_of_posts:
             posts.append(post)
 
+    paginator = Paginator(posts, 10) # Show 25 contacts per page.
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, "network/following.html", {
-        'posts': posts,
+        'page_obj': page_obj,
     })
-
-
-@login_required
-def returning_post_data_as_json(request):
-    pass
-
-
-@login_required
-def user_liking_or_unliking(request, post_id):
-    # Number of current post likes    
-    quantity_likes = Likes.objects.filter(liked= Post.objects.get(pk=post_id)).count() # I have a problem here
-    return HttpResponse(quantity_likes)
-
-    # Update the number of likes
-    if len(Likes.objects.get(user=User.objects.get(pk=request.user.id), likes=post_id)) > 0:
-        return JsonResponse({"action": "unliking", "likes": quantity_likes - 1})
-    
-    return JsonResponse({"action": "liking", "likes": quantity_likes + 1})
 
 
 @csrf_exempt
 @login_required
 def likes(request, post_id):
-    
-    # Dinamiclly, like or unlike a post
-    if request.method != 'PUT':
-        return JsonResponse({"error": "Wrong method used in this route."})
 
     data = json.loads(request.body)
+
+    if request.method == 'GET':
+        try:
+            Likes.objects.get(user=User.objects.get(pk=request.user.id), liked=Post.objects.get(pk=request.user.id))
+            return JsonResponse({"user_is": "liking"})
+        except Likes.DoesNotExist:
+            return JsonResponse({"user_is": "disliking"})   
+    
+    # Dinamiclly, like or unlike a post
+    if request.method != 'POST':
+        return JsonResponse({"error": "Wrong method used in this route."})
 
     # Query for requested post
     try:
@@ -168,23 +176,20 @@ def likes(request, post_id):
 
     # Check if the user has already liked this post
     try:
-        like_instance = Likes.objects.get(user=request.user.id, liked=post_id)
+        like_instance = Likes.objects.get(user=User.objects.get(pk=request.user.id), liked=post)
 
         # Current user dislikes the post
         like_instance.delete()
-
-        # Save changes
-        like_instance.save()
+        post.likes = post.likes - 1
 
     except:
         # User likes the post
         new_like = Likes.objects.create(user=User.objects.get(pk=request.user.id), liked=post)
+        post.likes = post.likes + 1
 
         # Save changes
         new_like.save()
 
-    # Update the quantity of likes
-    post.likes = data.get("likes")
     post.save()
 
     return JsonResponse(post.all_data())
@@ -217,8 +222,27 @@ def edit(request, post_id):
         # Save changes
         post.save()
 
-        return JsonResponse({'message': 'everything went well'})
+        return HttpResponse('everything went well', status=204)
 
     except Exception as error:
-        return JsonResponse({'message': 'something went badly', 'error': error})
+        return HttpResponse(error, status=204)
 
+
+@csrf_exempt
+@login_required
+def alter_follow_state(request, person_id):
+    
+    # Check the method request
+    if request.method != "PUT":
+        return HttpResponse("You are using the wrong request method"), JsonResponse({"error": "Wrong method used in this route."})
+
+    # PUT
+    # if state exists, delete this record
+    try:
+        state = Following.objects.get(follower=User.objects.get(pk=request.user.id), following=User.objects.get(pk=person_id))
+        state.delete()
+    except:
+        new_follow = Following.objects.create(follower=User.objects.get(pk=request.user.id), following=User.objects.get(pk=person_id))
+        new_follow.save()
+
+    

@@ -1,0 +1,23 @@
+form {
+    display: grid;
+    place-items: center;
+    gap: 10px;
+}
+
+label {
+    font-size: large;
+    color: black;
+}
+
+textarea {
+    padding: 10px;
+    border: solid 1.5px black;
+    border-radius: 15px;
+}
+
+input[type='submit'] {
+    background-color: green;
+    border: none;
+    padding: 6px;
+    border-radius: 8px;
+}
