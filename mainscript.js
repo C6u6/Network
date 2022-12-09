@@ -18,22 +18,36 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function likeOrUnlike(postId, button) {
+
     // Make a PUT request to update the number of likes in a post
-    fetch(`update_likes/${postId}`, {
+    fetch(`/update_likes/${postId}`, {
         method: "POST",
         body: JSON.stringify({
             ilustrativeKey: '',
         }) 
     })
-    .catch(error => console.log(error));
-}
+    .then(res => res.json())
+    .then(data => {
+        // Alter the number of likes in the page
+        button.innerHTML = data['quantity_of_likes'];
 
+        // Alter the button backgroundcolor
+        if (data['user_is'] == 'liking') {
+            button.style.backgroundColor = 'green';
+        }
+        else {
+            button.style.backgroundColor = 'buttonface';
+        }
+    })
+    .catch(error => console.log(error))
+    .finally(console.log('Likes updated'));
+}
 
 function editContent(postId) {
 
     // Make a form to insert in place of the post content
     let form = document.createElement('form');
-    form.setAttribute('action', "{% url 'edit' %}");
+    form.setAttribute('action', `{% url 'edit' ${postId} %}`);
     form.setAttribute('method', 'PUT');
 
     let submitButton = document.createElement('input')
@@ -73,13 +87,13 @@ function editContent(postId) {
     });
 
     // Send the new info to the appropriete route
-    submitButton.addEventListener('click', () => {
+    submitButton.addEventListener('click', function () {
         if (!submitButton.disabled) {
             // Send through fetch
             fetch(`/edit/${postId}`, {
                 'method': 'PUT',
                 body: JSON.stringify({
-                    content: textarea.value,
+                    content: textarea.value, 
                 })
             })
             .catch(error => console.log(error));

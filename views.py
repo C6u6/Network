@@ -151,15 +151,6 @@ def content_following(request):
 @csrf_exempt
 @login_required
 def likes(request, post_id):
-
-    data = json.loads(request.body)
-
-    if request.method == 'GET':
-        try:
-            Likes.objects.get(user=User.objects.get(pk=request.user.id), liked=Post.objects.get(pk=request.user.id))
-            return JsonResponse({"user_is": "liking"})
-        except Likes.DoesNotExist:
-            return JsonResponse({"user_is": "disliking"})   
     
     # Dinamiclly, like or unlike a post
     if request.method != 'POST':
@@ -174,6 +165,9 @@ def likes(request, post_id):
     # Take a reference and all data from the found post
     post = Post.objects.get(id=post_id)
 
+    # This variable will be changed by the try-except block
+    action = ''
+
     # Check if the user has already liked this post
     try:
         like_instance = Likes.objects.get(user=User.objects.get(pk=request.user.id), liked=post)
@@ -181,6 +175,7 @@ def likes(request, post_id):
         # Current user dislikes the post
         like_instance.delete()
         post.likes = post.likes - 1
+        action = 'disliking'
 
     except:
         # User likes the post
@@ -189,10 +184,11 @@ def likes(request, post_id):
 
         # Save changes
         new_like.save()
+        action = 'liking'
 
     post.save()
 
-    return JsonResponse(post.all_data())
+    return JsonResponse({"quantity_of_likes": post.likes, "user_is": action})
 
 
 @csrf_exempt
@@ -213,7 +209,9 @@ def edit(request, post_id):
     try:
         # Update the content
         post = Post.objects.get(pk=post_id)
-        if data.get("content") is not None:
+        if data.get("content") is None:
+            return JsonResponse({"content": "is none"})
+        else:
             post.content = data["content"]
 
         # Register the time that the content was changed
