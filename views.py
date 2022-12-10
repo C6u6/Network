@@ -174,13 +174,13 @@ def likes(request, post_id):
 
         # Current user dislikes the post
         like_instance.delete()
-        post.likes = post.likes - 1
+        post.likes = Likes.objects.filter(liked=post).count()
         action = 'disliking'
 
     except:
         # User likes the post
         new_like = Likes.objects.create(user=User.objects.get(pk=request.user.id), liked=post)
-        post.likes = post.likes + 1
+        post.likes = Likes.objects.filter(liked=post).count()
 
         # Save changes
         new_like.save()
@@ -189,6 +189,16 @@ def likes(request, post_id):
     post.save()
 
     return JsonResponse({"quantity_of_likes": post.likes, "user_is": action})
+
+
+@csrf_exempt
+@login_required
+def like_exists(request, post_id):
+    try:
+        Likes.objects.get(user=User.objects.get(pk=request.user.id), liked=Post.objects.get(pk=post_id))
+        return JsonResponse({"post": "liked"})
+    except Likes.DoesNotExist:
+        return JsonResponse({"post": "unliked"})
 
 
 @csrf_exempt
@@ -210,11 +220,11 @@ def edit(request, post_id):
         # Update the content
         post = Post.objects.get(pk=post_id)
         if data.get("content") is None:
-            return JsonResponse({"content": "is none"})
-        else:
-            post.content = data["content"]
+            return JsonResponse({"error": "content is None"})
+        
+        post.content = data["content"]
 
-        # Register the time that the content was changed
+        # Register the time that the content was changed        
         post.updated_at = datetime.datetime.now()
 
         # Save changes

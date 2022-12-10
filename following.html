@@ -5,8 +5,8 @@
         <div class="div-post">
             <div class="header-post">
                 <span><a href="{% url 'profile' post.creator.id %}">{{post.creator}}</a></span>
-                {% if post.updated_at != post.created_at%}
-                    <span id="updated_at" hidden>Edited: {{post.updated_at}}</span>
+                {% if post.updated_at %}
+                    <span id="updated_at">Edited: {{post.updated_at}}</span>
                 {% endif %}
             </div>
             <div class="content-post">

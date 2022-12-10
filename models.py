@@ -8,8 +8,8 @@ class User(AbstractUser):
 class Post(models.Model):
     creator = models.ForeignKey("network.User", on_delete=models.CASCADE)
     content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_at = models.DateTimeField(null=True, blank=True)
     likes = models.IntegerField(default=0, null=True)
 
     def __str__(self):

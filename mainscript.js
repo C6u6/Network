@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add an event that will allow user to like or unlike a post
     document.querySelectorAll('.like-button').forEach( element => {
         let postIdInButton = element.getAttribute('id');
-        element.addEventListener('click', function () {likeOrUnlike(postIdInButton, element)});
+        element.addEventListener('click', function () {likeOrUnlike(postIdInButton, element)}, userLikedThisPost(postIdInButton, element));
     });
 
     // Add an event to edit buttons
@@ -12,9 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let postIdInButton = button.getAttribute('id');
         button.addEventListener('click', function () {editContent(postIdInButton)});
     });
-
-    // Show the edited time post, if any
-    showEditedTime();
 });
 
 function likeOrUnlike(postId, button) {
@@ -43,6 +40,18 @@ function likeOrUnlike(postId, button) {
     .finally(console.log('Likes updated'));
 }
 
+function userLikedThisPost(postId, button) {
+    // Make a fetch to check if the liking between the user and post exists
+    fetch(`like_exists/${postId}`)
+    .then(res => res.json())
+    .then(data => {
+        button.style.backgroundColor = "buttonface";
+        if (data["post"] == "liked") {
+            button.style.backgroundColor = "green";
+        }
+    })
+}
+
 function editContent(postId) {
 
     // Make a form to insert in place of the post content
@@ -50,7 +59,8 @@ function editContent(postId) {
     form.setAttribute('action', `{% url 'edit' ${postId} %}`);
     form.setAttribute('method', 'PUT');
 
-    let submitButton = document.createElement('input')
+    let submitButton = document.createElement('input');
+    submitButton.class = 'send-post';
     submitButton.value =  'Save';
     submitButton.type = 'button';
     submitButton.disabled = true;
@@ -100,18 +110,6 @@ function editContent(postId) {
 
             // Substitute the form by the new post content
             document.querySelector(`#content-post-id-${postId}`).innerHTML = textarea.value; 
-
-            // Show the time that the post was changed
-            showEditedTime();
         }
     })
-}
-
-function showEditedTime() {
-    let created_at = document.querySelector('#created_at');
-    let updated_at = document.querySelector('#updated_at');
-
-    if (created_at.innerHTML != updated_at.innerHTML) {
-        updated_at.hidden = false;
-    };
 }
